@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -138,6 +139,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 		defer csvFile.Close()
+		return // Ensure you return here to avoid further execution
 	}
 
 	reader := csv.NewReader(csvFile)
@@ -181,11 +183,18 @@ func main() {
 		songs = append(songs, song)
 	}
 
+	//Define the routes
 	router.HandleFunc("/songs", GetSongs).Methods("GET")
 	router.HandleFunc("/songs/{id}", GetSong).Methods("GET")
 	router.HandleFunc("/songs", CreateSong).Methods("POST")
 	router.HandleFunc("/songs/{id}", UpdateSong).Methods("PUT")
 	router.HandleFunc("/songs/{id}", DeleteSong).Methods("DELETE")
 
-	log.Fatal(http.ListenAndServe(":8000", router))
+	// CORS configuration
+	corsOptions := handlers.AllowedOrigins([]string{"*"})                                                 // Allow all origins
+	corsMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})           // Allowed methods
+	corsHeaders := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}) // Allowed headers
+
+	// Start the server with CORS enabled
+	log.Fatal(http.ListenAndServe(":8000", handlers.CORS(corsOptions, corsMethods, corsHeaders)(router)))
 }
